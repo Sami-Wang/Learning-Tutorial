@@ -2,23 +2,52 @@
 {
     public partial class MainPage : ContentPage
     {
-        int count = 0;
+        List<string> quotes = new List<string>();
 
         public MainPage()
         {
             InitializeComponent();
         }
 
-        private void OnCounterClicked(object sender, EventArgs e)
+        protected override async void OnAppearing()
         {
-            count++;
+            base.OnAppearing();
+            await LoadMauiAsset();
+        }
 
-            if (count == 1)
-                CounterBtn.Text = $"Clicked {count} time";
-            else
-                CounterBtn.Text = $"Clicked {count} times";
+        async Task LoadMauiAsset()
+        {
+            using var stream = await FileSystem.OpenAppPackageFileAsync("quotes.txt");
+            using var reader = new StreamReader(stream);
 
-            SemanticScreenReader.Announce(CounterBtn.Text);
+            while (reader.Peek() != -1) 
+            {
+                quotes.Add(reader.ReadLine());
+            }
+        }
+
+        Random random = new Random();
+        private void btnGenerateQuote_Clicked(object sender, EventArgs e)
+        {
+            var startColor = System.Drawing.Color.FromArgb(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256));
+            var endColor = System.Drawing.Color.FromArgb(random.Next(0, 256), random.Next(0, 256), random.Next(0, 256));
+
+            var colors = ColorUtility.ColorControls.GetColorGradient(startColor, endColor, 6);
+
+            float stopOffest = .0f;
+            var stops = new GradientStopCollection();
+            foreach (var c in colors) 
+            {
+                stops.Add(new GradientStop(Color.FromArgb(c.Name), stopOffest));
+                stopOffest = stopOffest + .2f;
+            }
+
+            var gradient = new LinearGradientBrush(stops, new Point(0, 0), new Point(1, 1));
+
+            background.Background = gradient;
+
+            var index = random.Next(quotes.Count);
+            quote.Text = quotes[index];
         }
     }
 
